@@ -1,6 +1,4 @@
 import React from 'react';
-import Head from 'next/head';
-import Error from 'next/error';
 import {api} from 'horizen-framework/frontend';
 import { withRouter } from 'next/router'
 import { Card, Button, TextArea } from '@/components';
@@ -13,44 +11,76 @@ class WrappApp extends React.Component {
     constructor(props){
       super(props);
 
-      this.state = {tasks: [], text: ""}
+      this.state = {tasks: {}, tasksIds: [], text: "", load: false}
     }
 
     async componentDidMount(){
       await this.getTasks();
     }
 
-    getTasks = async ()=> {
-      const result = await api.call("getTasks", {
+    getTasks = async () => {
+      this.setState({load: true});
+      const {tasks, tasksIds} = await api.call("getTasks", {
         auth: false,
         params: {},
       });
 
-      this.setState({tasks: result.tasks});
+      const tasksNormalize = tasks.reduce((obj, task) => {
+        obj[task.taskId] = task;
+        return obj;
+      }, {});
+
+      this.setState({tasks: tasksNormalize, tasksIds, load: false});
     }
 
     addTask = async () => {
+      this.setState({load: true})
       const task = await api.call("addTask", {
         auth: false,
         params: {
-          desc: this.text,
+          desc: this.state.text,
           date: new Date().toISOString(),
         }
       });
-      this.setState(state => ([...state, task]));
+      this.setState(state => {
+        state.tasks[task.taskId] = task;
+        return {
+          ...state,
+          tasksIds: [...state.tasksIds, task.taskId],
+          text: "",
+          load: false,
+        }
+      });
     }
+
+    handlerCompleteTask = async (taskId) => {
+      const completeTask = await api.call("completeTask", {
+        auth: false,
+        params: {taskId},
+      });
+      this.setState(state => {
+        state.tasks[taskId].status = completeTask.status;
+        return {
+          ...state,
+          tasks: {
+            ...state.tasks,
+          },
+        }
+      })
+    };
 
     changeTextArea = (e) => {
       this.setState({text: e.target.value});
     }
 
-    render(){
+    render() {
       return (
         <div 
           className="
             flex 
             justify-center 
-            items-center"
+            items-center
+            py-4"
         >
           <main 
             style={{width: "30dvw"}} 
@@ -59,13 +89,25 @@ class WrappApp extends React.Component {
               flex 
               flex-col 
               justify-center 
-              items-center gap-2"
+              items-center 
+              gap-2"
           >
-            {
-              this.state.tasks.map(
-                task => <Card key={task.taskId} {...task}/>
-              )
-            }
+            <ul className="list-none w-full flex flex-col gap-2">
+              {
+                this.state.tasksIds.length && this.state.load ? 
+                "Загрузка..." 
+                : 
+                this.state.tasksIds.map(
+                  taskId => (
+                    <Card 
+                      key={taskId} 
+                      {...this.state.tasks[taskId]} 
+                      handlerCompleteTask={this.handlerCompleteTask}
+                    />
+                  )
+                )
+              }
+            </ul>
             <TextArea 
               className="w-full inline-block" 
               placeholder="Введи сюда текст таски" 
@@ -73,7 +115,8 @@ class WrappApp extends React.Component {
               onChange={this.changeTextArea}
             />
             <Button 
-              text="Добавить задачу" 
+              disabled={this.state.load}
+              text={this.state.load ? "Добавялем..." : "Добавить задачу"} 
               handler={this.addTask}
             />
           </main>
