@@ -22,7 +22,7 @@ const cnStatus = (status) => cn(
   "min-w-20",
   status === "processing" ? ["bg-orange-300", "hover:bg-orange-500", "transition-all"] : undefined
 );
-const cnDesc = "min-w-16 p-2";
+const cnDesc = "overflow-hidden text-ellipsis min-w-16 p-2";
 const borderStyle = (status) => ({borderColor: status === "archived" ? "grey" : "black"});
 
 export const Card = ({status, date, desc, taskId, handlerCompleteTask}) => {

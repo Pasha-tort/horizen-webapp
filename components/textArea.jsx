@@ -6,10 +6,12 @@ export const TextArea = ({
   value, 
   onChange, 
   className, 
-  placeholder
+  placeholder,
+  disabled,
 }) => {
   return (
     <textarea 
+      disabled={disabled}
       style={{borderColor: "grey"}}
       placeholder={placeholder} 
       value={value} 

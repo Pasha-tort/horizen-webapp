@@ -113,6 +113,7 @@ class WrappApp extends React.Component {
               placeholder="Введи сюда текст таски" 
               value={this.state.text} 
               onChange={this.changeTextArea}
+              disabled={this.state.load}
             />
             <Button 
               disabled={this.state.load}
